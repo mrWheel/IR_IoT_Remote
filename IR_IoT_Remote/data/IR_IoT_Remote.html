@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<!--
+//*************************************************************************  
+//  Program  : IR_IoT_Remote.html, part of IR_IoT_Remote
+//
+//  Version  : v0.1.0 (WebSockets) [2019-07-14]
+//
+//  Copyright (c) 2019 Willem Aandewiel
+//
+//  TERMS OF USE: MIT License. See bottom of file.                                                            
+//*************************************************************************
+-->
+<html charset="UTF-8">
+  <head>
+  <style>
+
+/* define id element selectors (#) ------------------------------------------ */
+#image {
+    position: relative;
+}
+#image img {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+}
+
+/* define class selectors --------------------------------------------------- */
+.blockButton {
+  padding: 5px 10px;
+  margin: 5px;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 10px;
+  box-shadow: 2px 2px 15px -5px hsla(0, 0%, 0%, 1);
+}
+.blockButton:hover {
+  background: linear-gradient(to bottom, #f0f9ff 0%,#cbebff 88%,#a1dbff 100%);
+  transition: all 0.2s linear;
+}
+.blockButton .b1 {
+    display: inline-flex; /* element only as wide as content */
+}
+.blockButton .b2 {
+    display: table; /* element only as wide as content */
+}
+.IRbutton {
+  padding: 5px 10px;
+  margin: 5px;
+  width: 200px;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 10px;
+  box-shadow: 2px 2px 15px -5px hsla(0, 0%, 0%, 1);
+}
+.IRbutton:hover {
+  background: linear-gradient(to bottom, #f0f9ff 0%,#cbebff 88%,#a1dbff 100%);
+  transition: all 0.2s linear;
+}
+.editButtonSmall {
+  padding: 5px 10px;
+  margin: 5px;
+  width: 50px;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 10px;
+  box-shadow: 2px 2px 15px -5px hsla(0, 0%, 0%, 1);
+}
+.editButtonSmall:hover {
+  background: linear-gradient(to bottom, #f0f9ff 0%,#cbebff 88%,#a1dbff 100%);
+  transition: all 0.2s linear;
+}
+.editButtonBig {
+  padding: 5px 10px;
+  margin: 5px;
+  width: 200px;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 10px;
+  box-shadow: 2px 2px 15px -5px hsla(0, 0%, 0%, 1);
+}
+.editButtonBig:hover {
+  background: linear-gradient(to bottom, #f0f9ff 0%,#cbebff 88%,#a1dbff 100%);
+  transition: all 0.2s linear;
+}
+.blockDisplay {
+  padding: 5px 10px;
+  margin: 5px;
+  width: 200px;
+  font-size: 15px;
+  text-decoration: none;
+  border-radius: 10px;
+  box-shadow: 2px 2px 15px -5px hsla(0, 0%, 0%, 1);
+}
+
+.tabButton { 
+		width: 130px; 
+		height: 30px;
+		font-size: 14pt;
+		text-align: center;
+		border-radius: 10px 10px 0px 0px;
+		margin: 0px;
+		border-color: black;
+		background: #d6d4d3;
+}
+
+.tabName div {
+  	background-color: lightblue;
+}
+
+.buttonRow {
+		background-color: #ffffff; 
+	  border-color: #ffffff;
+}
+
+.profile {
+		border-style: solid;
+		border-width: 1px;
+}
+
+.profile p {
+    overflow: hidden;
+    background-color: lightblue;
+}
+.profile .label {
+    vertical-align: top;
+    float: left;
+    width: 150px;
+    padding-right: 24px;
+}
+
+.profile .value {
+    vertical-align: top;
+    float: left;
+    width: 140px; 
+/*  width: calc(90% - 150px); */
+}
+
+#logWindow {
+		font-size: 14px;
+		margin-left: 20px;
+		width: 90vw;
+    height: 20vh;
+}
+
+/*
+.dev-header h1 img { 
+  display: inline;
+}
+*/
+
+.header img {
+  float: right;
+  top: 18px;
+  width: 24px;
+  height: 24px;
+/*  background: #555; */
+}
+
+.header h1 span {
+  position: relative;
+  top: 1px;
+  left: 10px;
+}
+
+.footer {
+   position: fixed;
+   left: 0;
+   bottom: 0;
+   width: 100%;
+   color: gray;
+   font-size: small;
+   text-align: right;
+}
+
+/* define tag selectors (.) ------------------------------------------------- */
+
+body {  margin: 10; }
+
+/* End Style ---------------------------------------------------------------- */
+</style>  
+  
+    <meta name="viewport" content="width=device-width, initial-scale=1">	
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.23.0/moment.min.js"></script>
+    
+    <title>IR IoT Remote (v0.1) [WebSockets]</title>
+  </head>
+  <body>
+	<font face="Arial">
+		<!-- <div class="dev-header"> -->
+		<div class="header">
+      <img src="FSexplorer.png" alt="FSexplorer" onclick="window.location = '/FSexplorer'"; return false; />
+    	<h1>
+        <span id="devName">IR IoT Remote</span> &nbsp; &nbsp; &nbsp;
+        <span id="devVersion" style='font-size: small;'>[version]</span>
+      </h1>
+   </div>
+<!--    <div style="clear:both"></div> -->
+  </font>
+
+ 	<!-- START Tabbladen -->
+  <div style="background:#d6d4d3;">
+  	<button id="bControl"  class="tabButton" style="background:#ffffff;" onclick="openTab('Control')">Control</button>
+  	<button id="bLearn"  class="tabButton" onclick="openTab('Learn')">Learn</button>
+  	<button id="bEdit"  class="tabButton" onclick="openTab('Edit')">Edit</button>
+  </div>	<!-- END Tabbladen -->
+
+ 	<!-- START Control Tab -->
+  <div id="Control" class="tabName">
+	 	<!-- START ControlTab Dummy -->
+  	<div id="controlTab" class="dummy">
+		 	<!-- START profile -->
+  		<div class="profile">
+  			<div id="buttonDiv"></div>
+  		</div>	<!-- END profile -->
+  	
+    </div>
+  </div>		<!-- END Control tab -->
+  
+ 	<!-- START Learn Tab -->
+  <div id="Learn" class="tabName">
+	 	<!-- START learnTab Dummy -->
+    <div id="learnTab" class="dummy">
+		 	<!-- START learn -->
+  		<div class="profile">
+      	<div> 
+      	  <button id="buttonLearn"  class="blockButton b1" onclick="handleButton('Learn')">Learn</button>
+      	  <span id="gotPulse"></span>
+        </div>
+   			<p>
+        	<span class="label">button Label</span>
+       	  <input type="text" class="editButtonBig" maxlength="20" style="padding-left:10px;" id="buttonLabel">
+        	<span id="buttonLabelError"></span>
+        </p>
+        <p>
+        	<span class="label">pulse File name</span>
+       	  <input type="text" class="editButtonBig" maxlength="30" style="padding-left:10px;" id="pulseFile">
+        	<span id="pulseFileError"></span>
+        </p>
+        <p>
+        	<span class="label">Sequence</span>
+       	  <input type="number" class="editButtonSmall" maxlength="2" style="padding-left:10px;" id="sequence">
+        	<span id="sequenceError"></span>
+        </p>
+
+  		</div>
+    </div>
+      		
+      <div> 
+        <button id="editSave" class="blockButton b1" onclick="handleButton('pulseSave')">Save Pulse</button>
+        <br>
+      </div>
+
+  </div>		<!-- END Learn tab -->
+
+ 	<!-- START Edit Tab -->
+  <div id="Edit" class="tabName">
+	 	<!-- START EditTab Dummy -->
+  	<div id="editTab" class="dummy">
+		 	<!-- START profile -->
+  		<div class="profile">
+  			<div id="editDiv"></div>
+  		</div>	<!-- END profile -->
+
+    </div>
+  </div>	<!-- END Edit tab -->
+  
+  <!-- REST -->
+ 	<p><input type="checkbox" id="debug" value="doDebug" onChange="setDebugMode()"> Debug</p>
+  <div id="Redirect"></div>
+	<textarea id="logWindow"></textarea>
+
+<!-- ======================================================================= -->
+  <script>
+//============================================================================//
+  
+"use strict";
+
+	let webSocketConn;
+  let validJson  			= false;
+  let needReload 			= true;
+  let settingsChanged = false;
+  let jsonMessage;   
+  let singlePair;
+  let singleFld;
+ 	var pulseArray  = [];
+
+  window.onload=bootsTrap;
+  window.onfocus = function() {
+  	if (needReload) {
+  		window.location.reload(true);
+  	}
+  };
+  
+ 	function openTab(tabName) {
+ 		let bID = "b" + tabName;
+ 		console.log("openTab("+ tabName +")");
+    document.getElementById("bControl").style.background='#d6d4d3';
+    document.getElementById("bLearn").style.background='#d6d4d3';
+    document.getElementById("bEdit").style.background='#d6d4d3';
+ 		let i;
+ 		let x = document.getElementsByClassName("tabName");
+ 		for (i = 0; i < x.length; i++) {
+ 			x[i].style.display = "none";  
+ 		}
+    document.getElementById(bID).style.background='#ffffff';
+ 		document.getElementById(tabName).style.display = "block";  
+    if (tabName == "Control") {
+ 			addLogLine("newTab: Control");
+    	//document.getElementById('Settings').style.display = "block";  
+ 			//setLock();
+ 			webSocketConn.send("tabControl");
+ 			//settingsChanged = false;
+ 			
+ 		} else if (tabName == "Learn") {
+ 			addLogLine("newTab: Learn");
+ 			webSocketConn.send("tabLearn");
+ 			
+ 		} else if (tabName == "Edit") {
+ 			addLogLine("newTab: Edit");
+ 			webSocketConn.send("tabEdit");
+
+ 		}
+ 	}	// openTab()
+  	
+  
+  function bootsTrap() {
+		addLogLine("bootsTrap()");
+		needReload = true;
+		
+		document.getElementById('logWindow').style.display = "none";
+    
+    let count = 0;
+    while (document.getElementById('devVersion').value == "[version]") {
+    	count++;
+    	addLogLine("count ["+count+"] devVersion is ["+document.getElementById('devVersion').value+"]");
+    	if (count > 10) {
+    		alert("Count="+count+" => reload from server!");
+    		window.location.reload(true);
+    	}
+    	setTimeout("", 500);
+    }
+
+  } // bootsTrap()
+  
+  webSocketConn	= new WebSocket('ws://'+location.host+':81/', ['arduino']);
+  addLogLine(" ");
+  addLogLine("WebSocket('ws://"+location.host+":81/', ['arduino'])");
+  
+  webSocketConn.onopen 		= function () { 
+  	addLogLine("Connected!");
+   	webSocketConn.send('Connect ' + new Date()); 
+   	addLogLine("getDevInfo");
+   	webSocketConn.send("getDevInfo");
+		addLogLine("initTab: Control");
+		webSocketConn.send("tabControl");
+   	needReload	= false;
+   	openTab('Control');
+
+  }; 
+  webSocketConn.onclose 		= function () { 
+   	addLogLine(" ");
+   	addLogLine("Disconnected!");
+   	addLogLine(" ");
+   	needReload	= true;
+   	openTab('Control');
+   	let redirectButton = "<p></p><hr><p></p><p></p>"; 
+   	redirectButton    += "<style='font-size: 50px;'>Disconneted from aircoController"; 
+   	redirectButton    += "<input type='submit' value='re-Connect' "; 
+    redirectButton    += " onclick='window.location=\"/\";' />  ";     
+   	redirectButton    += "<p></p><p></p><hr><p></p>"; 
+		document.getElementById("controlTab").innerHTML = redirectButton;
+
+  }; 
+  webSocketConn.onerror 	= function (error) 	{ 
+   	addLogLine("Error: " + error);
+   	console.log('WebSocket Error ', error);
+  };
+  webSocketConn.onmessage	= function (e) {
+  //addLogLine("onmessage: " + e.data);
+    parsePayload(e.data); 
+  };
+		
+	function parsePayload(payload) {
+		console.log("parsePayload(): [" + payload + "]\r\n");
+  	validJson = IsJsonString(payload);
+  		
+  	if ( payload.startsWith('tabControl') ) {										// not json
+  		openTab('Control');
+  	
+  	} else if ( payload.startsWith('receivedPulse') ) {											// not json!
+  		document.getElementById("gotPulse").innerHTML = "Pulse received!";
+  		
+  	} else if ( payload.startsWith('saveDone') ) {										// not json
+  		openTab('Control');
+  		
+  	} else if ( payload.startsWith('BUTTONS') ) {											// not json
+  		singleFld = payload.split(":");
+  		let buttonDiv = document.getElementById("buttonDiv");
+  		buttonDiv.innerHTML = "";
+  		pulseArray.length = 0
+ 			console.log("[0] => ["+singleFld[0]+"]");  	// "BUTTONS"
+ 			let addButton = ""
+  		let i = 0;
+	 		for (i = 1; i < singleFld.length; i++) {
+	 			singlePair = singleFld[i].split(",");
+	 			console.log("pulseArray.push("+(i-1)+" -> "+singlePair[2]+")");
+	 			pulseArray.push(singlePair[2]);
+ 				console.log("["+i+"] => ["+(i-1)+"] => ["+singlePair[1]+"] / ["+singlePair[2]+"]");  
+ 				//Create an input type dynamically.   
+        var element = document.createElement("input");
+        //Assign different attributes to the element. 
+        element.setAttribute("type", "button");
+        element.setAttribute("value", singlePair[1]);
+        element.setAttribute("name", singlePair[1]);
+        element.setAttribute("class", "IRbutton");
+        element.setAttribute("onclick", 'javascript:handleButton('+(i-1)+');');
+        //Append the element in page (in span).  
+        buttonDiv.appendChild(element);
+        element = document.createElement("br");
+        buttonDiv.appendChild(element);
+	 		}
+  		
+  	} else if ( payload.startsWith('EDITS') ) {											// not json
+  		singleFld = payload.split(":");
+  		let editDiv = document.getElementById("editDiv");
+  		editDiv.innerHTML = "";
+  		pulseArray.length = 0
+ 			console.log("[0] => ["+singleFld[0]+"]");  	// "EDITS"
+ 			let addEdit = "";
+ 			var element;
+			let i = 0;
+	 		for (i = 1; i < singleFld.length; i++) {
+	 			singlePair = singleFld[i].split(",");
+	 			console.log("pulseArray.push("+(i-1)+" -> "+singlePair[2]+")");
+	 			let indexNum 	 = "index"+(i-1)
+	 			let labelNum 	 = "label"+(i-1)
+	 			let btnIndex = singlePair[0];
+	 			let btnLabel = singlePair[1];
+	 			pulseArray.push(singlePair[2]);
+ 				console.log("["+i+"] => ["+btnIndex+"] => ["+btnLabel+"] / ["+singlePair[2]+"]");  
+ 				//Create an input type dynamically.   
+ 				//=======================Sequence=======================================
+        element = document.createElement("input");
+        //Assign different attributes to the element. 
+        element.setAttribute("id", indexNum);
+        element.setAttribute("type", "number");
+        element.setAttribute("value", btnIndex);
+        element.setAttribute("name", btnIndex);
+        element.setAttribute("maxlength", 2);
+        element.setAttribute("class", "editButtonSmall");
+        //Append the element in page (in span).  
+        editDiv.appendChild(element);
+        element.addEventListener('change',		function() {fieldChange(btnIndex, indexNum, "N");});
+ 				//=======================Label==========================================
+        element = document.createElement("input");
+        //Assign different attributes to the element. 
+        element.setAttribute("id", labelNum);
+      //element.setAttribute("value", singlePair[1]);
+      //element.setAttribute("name", singlePair[1]);
+        element.setAttribute("value", btnLabel);
+        element.setAttribute("name", btnLabel);
+        element.setAttribute("maxlength", 20);
+        element.setAttribute("class", "editButtonBig");
+        //Append the element in page (in span).  
+        editDiv.appendChild(element);
+        element.addEventListener('change',		function() {fieldChange(btnLabel, labelNum, "X");});
+ 				//=======================pulseFile=======================================
+        element = document.createElement("span");
+        //Assign different attributes to the element. 
+        element.innerHTML = "&nbsp; &nbsp; &nbsp; ["+singlePair[2]+"]";
+        //Append the element in page (in span).  
+        editDiv.appendChild(element);
+        element = document.createElement("br");
+        editDiv.appendChild(element);
+	 		}
+	 		
+  	} else if ( payload.startsWith('reloadEdit') ) {											// not json!
+  		openTab("Edit");
+
+  	} else if (validJson) {
+  		jsonMessage = JSON.parse(payload);
+    //addLogLine("parsePayload(json): [" + jsonMessage.msgType + "]");
+  		console.log("parsePayload(json): [" + jsonMessage.msgType + "]");
+    	if ((jsonMessage.msgType == "devInfo")) {
+      	document.getElementById("devName").innerHTML    = jsonMessage.devName;
+      	document.getElementById("devVersion").innerHTML = jsonMessage.devVersion;
+      	addLogLine("parsePayload(): "+jsonMessage.devIPaddress);
+      }
+  	} else {
+ 			addLogLine("parsePayload(): Don't know: [" + payload + "]\r\n");
+  	}
+  };
+  
+  
+  function handleButton(buttonPressed) {
+		addLogLine("buttonPressed("+ buttonPressed +")");
+  	if (buttonPressed == 'Learn') {
+  		document.getElementById("gotPulse").innerHTML = "waiting for pulse ...";
+ 			webSocketConn.send("startLearning");
+
+  	} else if (buttonPressed == 'pulseSave') {
+  		var FldError = false;
+  		if (document.getElementById("buttonLabel").value == "") {
+  			document.getElementById("buttonLabelError").innerHTML = "Empty!";
+  			FldError = true;
+  		}
+  		var fName = document.getElementById("pulseFile").value.toString().replace(/\s/g, "");
+  		if (fName == "") {
+  			document.getElementById("pulseFileError").innerHTML = "Empty!";
+  			FldError = true;
+  		}
+  		var seqNr = (document.getElementById("sequence").value) * 1;
+  		if (seqNr < 1 || seqNr > 99) {
+  			document.getElementById("sequenceError").innerHTML = "Range!";
+  			FldError = true;
+  		}
+  		if (!FldError) {
+  			webSocketConn.send("saveNewPulse: "	+seqNr+":"
+  																	+document.getElementById("buttonLabel").value
+  																	+":"+fName);
+  		}
+  		
+  	} else if (!isNaN(buttonPressed)) {	// so its a number!
+  			console.log("IRSEND: ["+buttonPressed+"] ===> ["+pulseArray[buttonPressed]+"]");
+  			webSocketConn.send("IRSEND: "	+pulseArray[buttonPressed]);
+  			
+  	} else {
+ 			webSocketConn.send("Nothing to do");
+
+  	}
+  }	// handleButton()
+      
+  
+ 	function fieldChange(Field, fldNum, fldType) {
+		var newValue 	= document.getElementById(fldNum).value; 
+ 		console.log("fieldChange(): Field["+Field+"],[" +fldNum+"],["+fldType+"] => ["+newValue+"]"); 
+  	addLogLine("fieldChange(): Field["+Field+"],[" +fldNum+"],["+fldType+"] => ["+newValue+"] has changed"); 
+  	if (fldType == "N") {
+  		webSocketConn.send("editField:"+fldNum +":"+Field + ":" + (newValue * 1));
+  	} else {
+  		webSocketConn.send("editField:"+fldNum +":"+Field + ":" + newValue);
+  	}
+    
+  }	// fieldChange()
+  
+  
+  function setDebugMode() {
+  	if (document.getElementById('debug').checked)  {
+  		addLogLine("DebugMode checked!");
+  		document.getElementById('logWindow').style.display = "block";
+  	} else {
+  		addLogLine("DebugMode unchecked");
+  		document.getElementById('logWindow').style.display = "none";
+  	}
+  }	// setDebugMode()
+  
+  function addLogLine(text) {
+  	if (document.getElementById('debug').checked) {
+  		let logWindow = document.getElementById("logWindow");
+  		let myTime = new Date().toTimeString().replace(/.*(\d{2}:\d{2}:\d{2}).*/, "$1");
+  		let addText = document.createTextNode("["+myTime+"] "+text+"\r\n");
+  		logWindow.appendChild(addText);
+  		document.getElementById("logWindow").scrollTop = document.getElementById("logWindow").scrollHeight 
+  	} 
+  }	// addLogLine()
+
+  function IsJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+  }	// IsJsonString()
+ 
+  function round(value, precision) {
+    var multiplier = Math.pow(10, precision || 0);
+    return Math.round(value * multiplier) / multiplier;
+  }
+
+  </script>
+
+  </body>
+  	<div class="footer">
+      <hr>
+  		2019 &copy; Willem Aandewiel &nbsp; &nbsp;
+  	</div>
+</html>
+
+<!--
+//***************************************************************************
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+// IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+// CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT
+// OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+// THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// 
+//***************************************************************************
+-->
