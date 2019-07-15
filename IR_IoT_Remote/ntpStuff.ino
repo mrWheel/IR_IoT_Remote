@@ -28,6 +28,7 @@ static int        ntpServerNr = 0;
 static bool       externalNtpTime = false;
 static IPAddress  ntpServerIP; // NTP server's ip address
 
+
 //=======================================================================
 bool externalNtpSync() {
 //=======================================================================
@@ -41,17 +42,10 @@ String externalNtpIP() {
   char cIP[25];
 
   sprintf(cIP, "%d.%d.%d.%d", ntpServerIP[0], ntpServerIP[1], ntpServerIP[2], ntpServerIP[3]);
-  //String str = String(ntpServerIP[0]);
-  //str += ".";
-  //str += String(ntpServerIP[1]);
-  //str += ".";
-  //str += String(ntpServerIP[2]);
-  //str += ".";
-  //str += String(ntpServerIP[3]);
+
   return cIP;
   
 } // externalNtpIP()
-
 
 //=======================================================================
 bool startNTP() {
@@ -70,6 +64,7 @@ bool startNTP() {
   return false;
 
 } // startNTP()
+
 
 //=======================================================================
 bool loopNTP() {
@@ -101,7 +96,6 @@ bool loopNTP() {
     Debugln("time not (yet) set!!");
   }
   DebugFlush();
-  digitalWrite(GRN_LEDPIN, LOW);
 
   return externalNtpTime;
 
@@ -112,7 +106,7 @@ bool loopNTP() {
 time_t getNtpTime() {
 //=======================================================================
   //IPAddress ntpServerIP; // NTP server's ip address
-
+  
   while (Udp.parsePacket() > 0) { yield(); }  // discard any previously received packets
 
   // get a random server from the pool
@@ -136,7 +130,7 @@ time_t getNtpTime() {
               ntpServerNr = 1;
               break;
   }
-
+  
   sendNTPpacket(ntpServerIP);
   uint32_t beginWait = millis();
   while (millis() - beginWait < 1500) {
@@ -239,7 +233,6 @@ time_t dateTime2Epoch(char const *date, char const *time) {
     return makeTime(t);
     
 } // dateTime2Epoch()
-
 
 /***************************************************************************
 *
