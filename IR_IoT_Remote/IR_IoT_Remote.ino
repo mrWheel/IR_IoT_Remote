@@ -20,12 +20,11 @@
     - Debug Level: "None"
     - IwIP Variant: "v2 Lower Memory"
     - VTables: "Flash"
-    - Reset Method: "nodemcu"
+    - Reset Method: "none" | "nodemcu"
     - CPU Frequency: "80 MHz"
     - Buildin Led: "1"
     - Upload Speed: "115200"
     - Erase Flash: "Only Sketch"
-    - Port: "IrIotRemote at <-- IP address -->"
 */
 
 
@@ -65,11 +64,9 @@ const uint16_t kMinUnknownSize = 12;
 #include <TimeLib.h>  // https://github.com/PaulStoffregen/Time
 
 #include "Debug.h"
-#define _HOSTNAME     "IrIotRemote"
+#define _HOSTNAME     "irremote"
 #include "networkStuff.h"
 
-//#define _SSID         "AandeWiFi"       // WiFi SSID
-//#define _PASSWORD     "3741TS12tl"      // WiFi PASSWORD
 #define ONE_WIRE_PIN  2                 // GPIO02 - GPIO pin waar DS18B20 op aangesloten is
 #define IR_LEDPIN     4
 #define RED_LEDPIN    5
@@ -247,10 +244,10 @@ void setup() {
   
   HttpServer.on("/ReBoot", HTTP_POST, handleReBoot);
 
-  HttpServer.serveStatic("/",                SPIFFS, "/IR_IoT_Remote.html");
-  HttpServer.serveStatic("/IR_IoT_Remote.js",  SPIFFS, "/IR_IoT_Remote.js");
-  HttpServer.serveStatic("/IR_IoT_Remote.css", SPIFFS, "/IR_IoT_Remote.css");
-  HttpServer.serveStatic("/FSexplorer.png",  SPIFFS, "/FSexplorer.png");
+  HttpServer.serveStatic("/",                   SPIFFS, "/IR_IoT_Remote.html");
+  HttpServer.serveStatic("/IR_IoT_Remote.js",   SPIFFS, "/IR_IoT_Remote.js");
+  HttpServer.serveStatic("/IR_IoT_Remote.css",  SPIFFS, "/IR_IoT_Remote.css");
+  HttpServer.serveStatic("/FSexplorer.png",     SPIFFS, "/FSexplorer.png");
 
   HttpServer.on("/FSexplorer", HTTP_POST, handleFileDelete);
   HttpServer.on("/FSexplorer", handleRoot);
@@ -258,12 +255,26 @@ void setup() {
     HttpServer.send(200, "text/plain", "");
   }, handleFileUpload);
 
+  //HttpServer.onNotFound([]() {
+  //  if (!handleFileRead(HttpServer.uri()))
+  //    HttpServer.send(404, "text/plain", "FileNotFound");
+  //});
   HttpServer.onNotFound([]() {
-    if (!handleFileRead(HttpServer.uri()))
+    if (HttpServer.uri() == "/update") {
+      HttpServer.send(200, "text/html", "/update" );
+    } else {
+      _dThis = true;
+      Debugf("onNotFound(%s)\n", HttpServer.uri().c_str());
+      if (HttpServer.uri() == "/") {
+        reloadPage("/");
+      }
+    }
+    if (!handleFileRead(HttpServer.uri())) {
       HttpServer.send(404, "text/plain", "FileNotFound");
+    }
   });
 
-  HttpUpdater.setup(&HttpServer); // OTA upload!
+  HttpUpdater.setup(&HttpServer); 
   HttpServer.begin();
   _dThis = true;
   Debugln( "HTTP server started\n" );

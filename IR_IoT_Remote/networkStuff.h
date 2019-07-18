@@ -12,7 +12,6 @@
 #include <ESP8266WiFi.h>        // version 1.0.0  - part of ESP8266 Core https://github.com/esp8266/Arduino
 #include <ESP8266WebServer.h>   // Version 1.0.0  - part of ESP8266 Core https://github.com/esp8266/Arduino
 #include <ESP8266HTTPUpdateServer.h>
-//#include <DNSServer.h>        //                - part of ESP8266 Core https://github.com/esp8266/Arduino
 #include <WiFiUdp.h>            //                - part of ESP8266 Core https://github.com/esp8266/Arduino
 #include <ESP8266mDNS.h>        //                - part of ESP8266 Core https://github.com/esp8266/Arduino
 #include <WiFiManager.h>        // version 0.14.0 - https://github.com/tzapu/WiFiManager
@@ -102,12 +101,15 @@ void startMDNS(char *Hostname) {
   Debugf("[1] mDNS setup as [%s.local]\n\n", Hostname);
   if (MDNS.begin(Hostname)) {              // Start the mDNS responder for _HOSTNAME
     _dThis = true;
-    Debugf("[1] mDNS responder started as [%s.local]\n\n", Hostname);
+    Debugf("[2] mDNS responder started as [%s.local]\n\n", Hostname);
+    _dThis = true;
+    Debugln("addService('http', 'tcp' 80)");
+    MDNS.addService("http", "tcp", 80);
+    Debugln("addService('arduino', 'tcp' 81)");
     MDNS.addService("arduino", "tcp", 81);
-    //MDNS.addService("http", "tcp", 80);
   } else {
     _dThis = true;
-    Debugln("[1] Error setting up MDNS responder!\n");
+    Debugln("[3] Error setting up MDNS responder!\n");
   }
   
 } // startMDNS()

@@ -239,6 +239,23 @@ void handleFileUpload() {
 } // handleFileUpload()
 
 
+//===========================================================================================
+void reloadPage(String goTo) {
+//===========================================================================================
+    String goToPageHTML;                                    
+    goToPageHTML += "<!DOCTYPE HTML><html lang='de'><head><meta charset='UTF-8'>";
+    goToPageHTML += "<meta name= viewport content=width=device-width, initial-scale=1.0, user-scalable=yes>";
+  //goToPageHTML += "<meta http-equiv='refresh' content='1; URL=" + goTo + "'>";
+    goToPageHTML += "<style>body {background-color: powderblue;}</style>";
+    goToPageHTML += "</head>\r\n<body><center>Wait ..</center>";
+    goToPageHTML += "<br><br><hr>If you are not redirected automatically, click this <a href='/'>"+String(_HOSTNAME)+"</a>.";
+    goToPageHTML += "  <script>";
+    goToPageHTML += "    window.location.replace('" + goTo + "'); ";
+    goToPageHTML += "  </script> ";
+    HttpServer.send(200, "text/html", goToPageHTML );
+  
+} // reloadPage()
+
 //void formatSpiffs() {       // Format SPIFFS
 //  SPIFFS.format();
 //  handleRoot();
