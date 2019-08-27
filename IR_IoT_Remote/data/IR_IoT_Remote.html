@@ -3,7 +3,7 @@
 //*************************************************************************  
 //  Program  : IR_IoT_Remote.html, part of IR_IoT_Remote
 //
-//  Version  : v0.1.0 (WebSockets) [2019-07-14]
+//  Version  : v0.2.1 [2019-08-13]
 //
 //  Copyright (c) 2019 Willem Aandewiel
 //
@@ -192,6 +192,8 @@ body {  margin: 10; }
     	<h1>
         <span id="devName">IR IoT Remote</span> &nbsp; &nbsp; &nbsp;
         <span id="devVersion" style='font-size: small;'>[version]</span>
+         &nbsp; &nbsp; &nbsp;  &nbsp; &nbsp; &nbsp;
+        <span id="insideTemp" style='font-size: big;'>temp *C</span>
       </h1>
    </div>
 <!--    <div style="clear:both"></div> -->
@@ -238,7 +240,8 @@ body {  margin: 10; }
         </p>
         <p>
         	<span class="label">Sequence</span>
-       	  <input type="number" class="editButtonSmall" maxlength="2" style="padding-left:10px;" id="sequence">
+       	  <input type="number" class="editButtonSmall" min="1" max="99" value="1"
+       	  														style="padding-left:10px;" id="sequence">
         	<span id="sequenceError"></span>
         </p>
 
@@ -260,7 +263,7 @@ body {  margin: 10; }
   		<div class="profile">
   			<div id="editDiv"></div>
   		</div>	<!-- END profile -->
-
+  		<b>Set Sequence to 0 (zero) to delete
     </div>
   </div>	<!-- END Edit tab -->
   
@@ -391,7 +394,11 @@ body {  margin: 10; }
   		document.getElementById("gotPulse").innerHTML = "Pulse received!";
   		
   	} else if ( payload.startsWith('saveDone') ) {										// not json
-  		openTab('Control');
+  		openTab('Learn');
+  		document.getElementById("gotPulse").innerHTML = "";
+  		document.getElementById("buttonLabel").value = "";
+  		document.getElementById("pulseFile").value = "";
+  		webSocketConn.send("tabLearn");
   		
   	} else if ( payload.startsWith('BUTTONS') ) {											// not json
   		singleFld = payload.split(":");
@@ -425,7 +432,7 @@ body {  margin: 10; }
   		let editDiv = document.getElementById("editDiv");
   		editDiv.innerHTML = "";
   		pulseArray.length = 0
- 			console.log("[0] => ["+singleFld[0]+"]");  	// "EDITS"
+ 			console.log("EDITS[0] => ["+singleFld[0]+"]");  	// "EDITS"
  			let addEdit = "";
  			var element;
 			let i = 0;
@@ -448,6 +455,9 @@ body {  margin: 10; }
         element.setAttribute("name", btnIndex);
         element.setAttribute("maxlength", 2);
         element.setAttribute("class", "editButtonSmall");
+        if (btnIndex == 0) {
+        	element.style.backgroundColor = "red";
+        }
         //Append the element in page (in span).  
         editDiv.appendChild(element);
         element.addEventListener('change',		function() {fieldChange(btnIndex, indexNum, "N");});
@@ -461,6 +471,9 @@ body {  margin: 10; }
         element.setAttribute("name", btnLabel);
         element.setAttribute("maxlength", 20);
         element.setAttribute("class", "editButtonBig");
+        if (btnIndex == 0) {
+        	element.style.backgroundColor = "red";
+        }
         //Append the element in page (in span).  
         editDiv.appendChild(element);
         element.addEventListener('change',		function() {fieldChange(btnLabel, labelNum, "X");});
@@ -476,7 +489,7 @@ body {  margin: 10; }
 	 		
   	} else if ( payload.startsWith('reloadEdit') ) {											// not json!
   		openTab("Edit");
-
+  			
   	} else if (validJson) {
   		jsonMessage = JSON.parse(payload);
     //addLogLine("parsePayload(json): [" + jsonMessage.msgType + "]");
@@ -485,6 +498,10 @@ body {  margin: 10; }
       	document.getElementById("devName").innerHTML    = jsonMessage.devName;
       	document.getElementById("devVersion").innerHTML = jsonMessage.devVersion;
       	addLogLine("parsePayload(): "+jsonMessage.devIPaddress);
+      
+      } else if ((jsonMessage.msgType == "Temp")) {
+      	console.log("msgType [Temp] ..");
+      	document.getElementById("insideTemp").innerHTML = jsonMessage.Value;
       }
   	} else {
  			addLogLine("parsePayload(): Don't know: [" + payload + "]\r\n");

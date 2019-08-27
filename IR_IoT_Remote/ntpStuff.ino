@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : ntpStuff, part of IR_IoT_Remote
-**  Version  : v0.1.0
+**  Version  : v0.2.1
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -45,7 +45,7 @@ String externalNtpIP() {
 
   return cIP;
   
-} // externalNtpIP()
+} // externalNtpIP() 
 
 //=======================================================================
 bool startNTP() {

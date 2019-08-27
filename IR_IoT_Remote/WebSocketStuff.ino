@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : WebSocketStuff, part of IR_IoT_Remote
-**  Version  : v0.1.0
+**  Version  : v0.2.2
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -41,11 +41,18 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             _dThis = true;
             Debugf("[%u] Got message: [%s]\n", num, payload);
             splitString(text, ':', words, 10);
+            sprintf(cMsg, "{\"msgType\":\"Temp\",\"Value\":\"%3.1f&deg;C\"}", DS18B20Temp);
+            webSocket.sendTXT(num, cMsg);
+
             // send data to all connected clients
             // webSocket.sendTXT(num, "message here");
             if (text.indexOf("tabControl") > -1) {  // Control tab is clicked
+              if (clientActiveTab == TAB_EDIT) {
+                deleteButtons();
+              }
               clientActiveTab   = TAB_CONTROL;
               newTab            = true;
+              waitForPulse      = 0;
               Debugf("websocket.sendTXT(%d, sendAvailableButtons(BUTTONS))\n", num);
               webSocket.sendTXT(num, sendAvailableButtons("BUTTONS").c_str());
 
@@ -67,6 +74,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
             } else if (text.indexOf("tabEdit") > -1) {
               clientActiveTab   = TAB_EDIT;
               newTab            = true;
+              waitForPulse      = 0;
               Debugf("websocket.sendTXT(%d, sendAvailableButtons(EDITS))\n", num);
               webSocket.sendTXT(num, sendAvailableButtons("EDITS").c_str());
               
@@ -84,7 +92,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t * payload, size_t lenght
                 writeRawData(words[3],  &results);
                 int16_t bPos = findPls(words[3].c_str());
                 if (bPos < 0) { // not found .. new pulse
-                  Buttons[maxButtons].Sequence = words[1].toInt();
+                  if (words[1].toInt() < 1 || words[1].toInt() > 99)
+                        Buttons[maxButtons].Sequence = 1;
+                  else  Buttons[maxButtons].Sequence = words[1].toInt();
                   strcpy(Buttons[maxButtons].buttonLabel, words[2].c_str());
                   strcpy(Buttons[maxButtons].pulseFile, words[3].c_str());
                   maxButtons++;

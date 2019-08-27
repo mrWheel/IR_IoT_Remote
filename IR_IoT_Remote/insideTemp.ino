@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : insideTemp, part of IR_IoT_Remote
-**  Version  : v0.1.0
+**  Version  : v0.2.1
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -10,7 +10,6 @@
  *
  * deze functie leest de temperatuur uit de DS18B20 sensor
  * needs:
- * #include <Wire.h> //I2C header file
  * #include <OneWire.h>
  * #include <DallasTemperature.h>
  * and:
@@ -25,7 +24,6 @@
 
 float getInsideTemp(uint8_t DS18B20DevNr) {
     
-  float DS18B20Temp, tmpTemp, corrTemp, insideTemp;
   char  fTmp[10], cMsg[20];
   
   if (DS18B20.getDeviceCount() > 0) {
@@ -36,26 +34,24 @@ float getInsideTemp(uint8_t DS18B20DevNr) {
       DS18B20.requestTemperatures();
       delay(100);
       DS18B20Temp = DS18B20.getTempCByIndex(DS18B20DevNr);
-      corrTemp    = DS18B20Temp * TEMPERATURE_ERROR;
       //dtostrf(DS18B20Temp, 6, 2, fTmp);  
       _dThis = true;
       Debugf("getInsideTemp(%d): DS18B20 (%s) \t[%s]\n", DS18B20DevNr, cMsg, String(DS18B20Temp, 1).c_str() );
       hasDS18B20sensor = true;    
   //}  
   } else {
-    corrTemp = (inTemp0 + inTemp1) / 2.0;  
     hasDS18B20sensor = false;      
   }
-  insideTemp = corrTemp;
-  if (insideTemp <= -127 || insideTemp >= 126) {
-    insideTemp = (inTemp0 + inTemp1) / 2.0;  // fallback to last known inTemp0
+  if (DS18B20Temp <= -127 || DS18B20Temp >= 126) {
+    DS18B20Temp = lastTemp;  // fallback to last known inTemp0
     _dThis = true;
     Debugln("getInsideTemp(): Error reading inside Temperature!");
-//} else {
-//  Debugf("getInsideTemp(%d): insideTemperature \t[%s]\n", DS18B20DevNr, String(insideTemp, 2).c_str());
+  } else {
+    lastTemp = DS18B20Temp;
+    Debugf("getInsideTemp(%d): insideTemperature \t[%s]\n", DS18B20DevNr, String(lastTemp, 2).c_str());
   }
   
-  return insideTemp;
+  return DS18B20Temp;
     
 }   // getInsideTemp()
 

@@ -2,7 +2,7 @@
 ***************************************************************************  
 **  Program  : IR_IoT_Remote
 */
-#define _FW_VERSION "v0.1.0 WS (2019-07-14)"
+#define _FW_VERSION "v0.2.2 WS (27-08-2019)"
 /* 
 **
 **  Copyright (c) 2019 Willem Aandewiel
@@ -20,7 +20,7 @@
     - Debug Level: "None"
     - IwIP Variant: "v2 Lower Memory"
     - VTables: "Flash"
-    - Reset Method: "none" | "nodemcu"
+    - Reset Method: "nodemcu" | "none"
     - CPU Frequency: "80 MHz"
     - Buildin Led: "1"
     - Upload Speed: "115200"
@@ -64,10 +64,10 @@ const uint16_t kMinUnknownSize = 12;
 #include <TimeLib.h>  // https://github.com/PaulStoffregen/Time
 
 #include "Debug.h"
-#define _HOSTNAME     "irremote"
+#define _HOSTNAME     "IRremote"
 #include "networkStuff.h"
 
-#define ONE_WIRE_PIN  2                 // GPIO02 - GPIO pin waar DS18B20 op aangesloten is
+#define ONE_WIRE_PIN 13                 // GPIO02 - GPIO pin waar DS18B20 op aangesloten is
 #define IR_LEDPIN     4
 #define RED_LEDPIN    5
 //#define kRecvPin   12
@@ -93,12 +93,13 @@ uint16_t    maxButtons = 0;
 static char *flashMode[]    { "QIO", "QOUT", "DIO", "DOUT", "UnKnown" };
 enum    { TAB_CONTROL, TAB_LEARN, TAB_EDIT, TAB_UNKNOWN };
 
-float     tn0, tn1, inTemp0 = 0.0, inTemp1 = 0.0;
+float     tn0, inTemp0 = 0.0, lastTemp, DS18B20Temp;
 bool      hasDS18B20sensor;
-uint32_t  nextSecond, nextStateSend, nextDS18B20PollTime;
+uint32_t  nextSecond, nextStateSend, nextDS18B20PollTime, waitForPulse;
 uint64_t  upTimeSeconds;
 String    hostnameMAC, jsonString, lastResetReason;
 char      inChar;               // Console input
+char      cMsg[100];
 uint16_t  rawData[500];         // placeholder for read data
 uint16_t  noPulses;
 char      wsSend[100];          // String to send via WebSocket
@@ -115,7 +116,7 @@ OneWire           oneWire(ONE_WIRE_PIN);
                   // Pass our oneWire reference to Dallas Temperature. 
 DallasTemperature DS18B20(&oneWire);
 // arrays to hold device address
-DeviceAddress     DS18B20_0, DS18B20_1, DS18B20_2;
+DeviceAddress     DS18B20_0;
 DeviceAddress     DS18B20addr[8];
 
 
@@ -141,7 +142,7 @@ void dumpACInfo(decode_results *results) {
 
 //=======================================================================
 bool startLearning() {
-  uint32_t  waitForPulse = millis() + 30000;
+  waitForPulse = millis() + 30000;
 
   digitalWrite(GRN_LEDPIN, HIGH);
   _dThis = true;
@@ -190,6 +191,10 @@ bool startLearning() {
 
       return true;
     }
+
+    HttpServer.handleClient();
+    webSocket.loop();
+
   } // while waitForPulse
 
   irrecv.disableIRIn();  // End the receiver
@@ -226,6 +231,20 @@ void setup() {
   digitalWrite(RED_LEDPIN, LOW);
   digitalWrite(GRN_LEDPIN, LOW);
 
+/*  
+ *   list all services with the cammand:
+ *   dns-sd -B _arduino .
+ *   dns-sd -B _http .
+*/
+  startMDNS(_HOSTNAME);
+  _dThis = true;
+  Debugln("addService('http', 'tcp' 80)");
+  MDNS.addService("http", "tcp", 80);
+  MDNS.port(80);  // webserver
+  Debugln("addService('arduino', 'tcp' 81)");
+  MDNS.addService("arduino", "tcp", 81);
+  MDNS.port(81);  // webSockets
+
   webSocket.begin();
   webSocket.onEvent(webSocketEvent);
 
@@ -242,7 +261,9 @@ void setup() {
     Debugln("SPIFFS Mount succesfull");
   }
   
-  HttpServer.on("/ReBoot", HTTP_POST, handleReBoot);
+  HttpServer.on("/ReBoot",  HTTP_POST, handleReBoot);
+  HttpServer.on("/restAPI", HTTP_GET, handleRestAPI);
+  HttpServer.on("/restapi", HTTP_GET, handleRestAPI);
 
   HttpServer.serveStatic("/",                   SPIFFS, "/IR_IoT_Remote.html");
   HttpServer.serveStatic("/IR_IoT_Remote.js",   SPIFFS, "/IR_IoT_Remote.js");
@@ -279,13 +300,6 @@ void setup() {
   _dThis = true;
   Debugln( "HTTP server started\n" );
 
-/*  
- *   list all services with the cammand:
- *   dns-sd -B _arduinoe .
-*/
-  startMDNS(_HOSTNAME);
-  MDNS.port(81);  // webSockets
-
   _dThis = true;
   Debug("setup(): Start Time: ");
   Debugf("%02d:%02d:%02d\n", hour(), minute(), second());
@@ -294,7 +308,7 @@ void setup() {
   
   // locate devices on the bus
   _dThis = true;
-  Debugf("Locating devices... Found [%d] devices\n", DS18B20.getDeviceCount());
+  Debugf("Locating DS18B20 sensors... Found [%d] devices\n", DS18B20.getDeviceCount());
 
   // search() looks for the next device. Returns 1 if a new address has been
   // returned. A zero might mean that the bus is shorted, there are no devices,
@@ -309,20 +323,16 @@ void setup() {
   if (DS18B20.getDeviceCount() == 0) Debugln("Unable to find address for DS18B20's");
 
   inTemp0 = getInsideTemp(0);
-  inTemp1 = getInsideTemp(1);
   
   _dThis = true;
   if (!hasDS18B20sensor) {
     inTemp0  = 0;
-    inTemp1  = 1;
     tn0      = 0;
-    tn1      = 1;
     Debugln("setup(): no inside temperature sensors found!");
   } else {
     Debugln("setup(): has inside temperature sensor(s)");
     //inTemp0  = getInsideTemp(0);
     tn0     = inTemp0;
-    tn1     = inTemp1;
   }
 
   for (int f=0; f<6; f++) {
@@ -337,11 +347,11 @@ void setup() {
   // --- initialize -----
   readSettings();
   
-  clientActiveTab     = TAB_UNKNOWN;
-  upTimeSeconds       = millis() / 1000;
-  nextSecond          = millis() + 1000;
-  nextStateSend       = millis() + 2000;
-  nextDS18B20PollTime  = millis() + 10000;
+  clientActiveTab       = TAB_UNKNOWN;
+  upTimeSeconds         = millis() / 1000;
+  nextSecond            = millis() + 1000;
+  nextStateSend         = millis() + 2000;
+  nextDS18B20PollTime   = millis() + 10000;
   
   _dThis = true;
   Debugln("================ done with setup() =====================\n");
@@ -352,9 +362,10 @@ void setup() {
 //=======================================================================
 void loop() {
   HttpServer.handleClient();
+  MDNS.update();
   webSocket.loop();
   if (millis() > nextDS18B20PollTime) { 
-    nextDS18B20PollTime = millis() + 10000;
+    nextDS18B20PollTime = millis() + 30000;
     handleSensor();
     digitalWrite(GRN_LEDPIN, HIGH);
     delay(100);

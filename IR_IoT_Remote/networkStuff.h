@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : networkStuff.h, part of IR_IoT_Remote
-**  Version  : v0.3.6
+**  Version  : v0.2.1
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -73,8 +73,9 @@ void startWiFi() {
     _dThis = true;
     Debugln("failed to connect and hit timeout\n");
     //reset and try again, or maybe put it to deep sleep
+    delay(3000);
     ESP.reset();
-    delay(1000);
+    delay(2000);
   }
 
   _dThis = true;
@@ -89,7 +90,7 @@ void startTelnet() {
         
   TelnetStream.begin();
   _dThis = true;
-  Debugln("Telnet server started ..\n");
+  Debugln("Telnet server started ..");
   TelnetStream.flush();
 
 } // startTelnet()
@@ -98,15 +99,11 @@ void startTelnet() {
 //=======================================================================
 void startMDNS(char *Hostname) {
 //=======================================================================
-  Debugf("[1] mDNS setup as [%s.local]\n\n", Hostname);
+  _dThis = true;
+  Debugf("[1] setup mDNS as [%s.local]\n", Hostname);
   if (MDNS.begin(Hostname)) {              // Start the mDNS responder for _HOSTNAME
     _dThis = true;
-    Debugf("[2] mDNS responder started as [%s.local]\n\n", Hostname);
-    _dThis = true;
-    Debugln("addService('http', 'tcp' 80)");
-    MDNS.addService("http", "tcp", 80);
-    Debugln("addService('arduino', 'tcp' 81)");
-    MDNS.addService("arduino", "tcp", 81);
+    Debugf("[2] mDNS responder started as [%s.local]\n", Hostname);
   } else {
     _dThis = true;
     Debugln("[3] Error setting up MDNS responder!\n");

@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : FSexplorer, part of IR_IoT_Remote
-**  Version  : v0.1.0 (WS)
+**  Version  : v0.2.1
 **
 **  Mostly stolen from https://www.arduinoforum.de/User-Fips
 **  See also https://www.arduinoforum.de/arduino-Thread-SPIFFS-DOWNLOAD-UPLOAD-DELETE-Esp8266-NodeMCU

@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : helpers, part of IR_IoT_Remote
-**  Version  : v0.1.0
+**  Version  : v0.2.1
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -63,13 +63,10 @@ void handleSensor() {
     if (!hasDS18B20sensor) {
       // ===== verzin wat data =====
       tn0 = -1;
-      tn1 = -1;
     } else {
       tn0 = getInsideTemp(0);   
-      tn1 = getInsideTemp(1);   
       _dThis = true;
-      Debugf("loop(): Sensor: T=[%s/%s], newT=[%s/%s] \n", String(inTemp0).c_str(), String(inTemp1).c_str()
-                                                        , String(tn0).c_str(), String(tn1).c_str());
+      Debugf("loop(): Sensor: lastTemp=[%s], newTemp=[%s] \n", String(lastTemp).c_str(), String(tn0).c_str());
     }
     
 } // handleSensor()
@@ -120,6 +117,31 @@ int8_t findPls(String plsFileName) {
   return -1;
 
 } // findPls()
+
+
+//=======================================================================
+int8_t findLabel(String buttonLabel) {
+//=======================================================================
+  String upperLabel;
+
+  _dThis = true;
+  Debugf("Looking for buttonLabel[%s] ..", buttonLabel.c_str());
+
+  buttonLabel.toUpperCase();
+  for(int l = 0; l < maxButtons; l++) {
+  //_dThis = true;
+  //Debugf("Test buttonLabel[%s] ..", Buttons[l].buttonLabel);
+    upperLabel = Buttons[l].buttonLabel;
+    upperLabel.toUpperCase();
+    if (upperLabel == buttonLabel) {
+      Debugf(" .. found[%s] at position [%d]\n", buttonLabel.c_str(), l);
+      return l;
+    }
+  }
+  Debugln(". not found :-(");
+  return -1;
+
+} // findLabels()
 
 
 //=======================================================================
@@ -236,7 +258,6 @@ void writeSettings() {
   _dThis = true;
   Debugf(" %s .. \n", String(_SETTINGS_FILE).c_str());
 
-
   sortButtons();
   listButtons();
 
@@ -246,7 +267,9 @@ void writeSettings() {
         _dThis = true;
         Debugf("[%2d] => [%2d][%s]/[%s]\n", r, Buttons[r].Sequence, Buttons[r].buttonLabel, Buttons[r].pulseFile);
         if (Buttons[r].buttonLabel != "") {
-          file.print(Buttons[r].Sequence);
+          if (Buttons[r].Sequence < 0 || Buttons[r].Sequence > 99) 
+                file.print(1);
+          else  file.print(Buttons[r].Sequence);
           file.print(":");
           file.print(Buttons[r].buttonLabel);
           file.print(":");
@@ -320,6 +343,31 @@ void readSettings() {
   }
 
 } // readSettings()
+
+
+//=======================================================================
+void deleteButtons() {
+//=======================================================================
+
+  _dThis = true;
+  Debugln("..");
+
+
+  for (int8_t b=0; b<maxButtons; b++) {
+    if (Buttons[b].Sequence == 0) {
+      _dThis = true;
+      Debugf("Remove [%d] [%s] and file [%s]\n", b, Buttons[b].buttonLabel, Buttons[b].pulseFile);
+      SPIFFS.remove(Buttons[b].pulseFile);
+      for (int8_t b2=b; b2< (maxButtons -1); b2++) {
+        Buttons[b2] = Buttons[(b2 + 1)];
+        _dThis = true;
+        //Debugf("Button[%d] := Button[%d][%s]\n", b2, (b2+1), Buttons[(b2 + 1)].buttonLabel);
+      }
+      if (maxButtons > 0) maxButtons--;
+      if (b >= 0) b--;
+    }
+  }
+} // deleteButtons()
 
 
 //=======================================================================
@@ -423,6 +471,7 @@ int32_t freeSpace() {
   
 } // freeSpace()
 
+
 //===========================================================================================
 void listSPIFFS(char * lDir) {
 //===========================================================================================
@@ -452,6 +501,7 @@ void listSPIFFS(char * lDir) {
   DebugFlush();
 
 } // listSPIFFS()
+
 
 //===========================================================================================
 void infoSPIFFS() {

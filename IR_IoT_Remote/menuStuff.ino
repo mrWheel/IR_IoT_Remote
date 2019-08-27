@@ -1,7 +1,7 @@
 /*
 ***************************************************************************  
 **  Program  : menuStuff, part of IR_IoT_Remote
-**  Version  : v0.1.0
+**  Version  : v0.2.1
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -18,7 +18,7 @@ void showStatus() {
   _dThis = false;  
   if (DS18B20.getDeviceCount() > 0) {
     Debugln("\n----------------------------------------------------------------");
-    Debugf("#> inside Temperature  [%s]*C\n", String(inTemp1, 2).c_str());
+    Debugf("#> inside Temperature  [%s]*C\n", String(DS18B20Temp, 2).c_str());
     Debugln("----------------------------------------------------------------");
   }
   Debug("\n==================================================================");
@@ -27,6 +27,7 @@ void showStatus() {
   Debug("]\n                 Compiled [");  Debug( __DATE__ ); 
                                               Debug( "  " );
                                               Debug( __TIME__ );
+  Debug("]\n               Flash Size [*4M (2M SPIFFS)*");  
   Debug("]\n        last Reset Reason [");  Debug( lastResetReason );
   Debug("]\n                 FreeHeap [");  Debug( String(ESP.getFreeHeap()).c_str() );
 
@@ -140,7 +141,7 @@ void listButtons() {
   Debugln("----------------------------------------------------------------------------------------");
   for (int l=0; l < maxButtons; l++) {
     _dThis = false;
-    Debugf("[%d] => Seq[%2d], Label[%-20.20s], pulseFile[%-32.32s]\n" 
+    Debugf("[%2d] => Seq[%2d], Label[%-20.20s], pulseFile[%-32.32s]\n" 
                       , l
                       , Buttons[l].Sequence
                       , Buttons[l].buttonLabel
@@ -169,8 +170,8 @@ void handleKeyInput() {
       case 'B':     showStatus();
                     break;
       case 'i':
-      case 'I':     inTemp1 = getInsideTemp(1);
-                    Debugf("Inside temperature is %s*C\n", String(inTemp1, 1).c_str());
+      case 'I':     DS18B20Temp = getInsideTemp(0);
+                    Debugf("Inside temperature is %s*C\n", String(DS18B20Temp, 1).c_str());
                     break;
       case 'l':
       case 'L':     listButtons();

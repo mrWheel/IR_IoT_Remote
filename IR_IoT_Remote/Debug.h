@@ -1,9 +1,7 @@
 /*
 ***************************************************************************  
-**  File  : Debug.h    Part off Program  : IR_IoT_Remote
-*/
-#define _FW_VERSION "v0.1.0 WS (2019-07-10)"
-/* 
+**  File    : Debug.h    Part off Program  : IR_IoT_Remote
+**  Version : v0.2.1
 **
 **  Copyright (c) 2019 Willem Aandewiel
 **
@@ -15,8 +13,8 @@ bool _dThis = false;
 #define Debug(...)      ({  if (_dThis == true) { \
                                    Serial.printf("[%02d:%02d:%02d] ", hour(), minute(), second()); \
                                    TelnetStream.printf("[%02d:%02d:%02d] ", hour(), minute(), second()); \
-                                   Serial.printf("%s(%d): ",__FUNCTION__, __LINE__); \
-                                   TelnetStream.printf("%s(%d): ",__FUNCTION__, __LINE__); \
+                                   Serial.printf("%-12.12s(%4d): ",__FUNCTION__, __LINE__); \
+                                   TelnetStream.printf("%-12.12s(%4d): ",__FUNCTION__, __LINE__); \
                                    _dThis = false;  \
                             } \
                             Serial.print(__VA_ARGS__); \
@@ -25,8 +23,8 @@ bool _dThis = false;
 #define Debugln(...)    ({  if (_dThis == true) { \
                                    Serial.printf("[%02d:%02d:%02d] ", hour(), minute(), second()); \
                                    TelnetStream.printf("[%02d:%02d:%02d] ", hour(), minute(), second()); \
-                                   Serial.printf("%s(%d): ",__FUNCTION__, __LINE__); \
-                                   TelnetStream.printf("%s(%d): ",__FUNCTION__, __LINE__); \
+                                   Serial.printf("%-12.12s(%4d): ",__FUNCTION__, __LINE__); \
+                                   TelnetStream.printf("%-12.12s(%4d): ",__FUNCTION__, __LINE__); \
                             } \
                             Serial.println(__VA_ARGS__); \
                             TelnetStream.println(__VA_ARGS__); \
@@ -34,8 +32,8 @@ bool _dThis = false;
 #define Debugf(...)     ({  if (_dThis == true) { \
                                     Serial.printf("[%02d:%02d:%02d] ", hour(), minute(), second()); \
                                     TelnetStream.printf("[%02d:%02d:%02d] ", hour(), minute(), second()); \
-                                    Serial.printf("%s(%d): ",__FUNCTION__, __LINE__); \
-                                    TelnetStream.printf("%s(%d): ",__FUNCTION__, __LINE__); \
+                                    Serial.printf("%-12.12s(%4d): ",__FUNCTION__, __LINE__); \
+                                    TelnetStream.printf("%-12.12s(%4d): ",__FUNCTION__, __LINE__); \
                                     _dThis = false; \
                             } \
                             Serial.printf(__VA_ARGS__); \
